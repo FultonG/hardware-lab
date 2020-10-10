@@ -20,8 +20,13 @@ app.use(bodyParser.json());
 board.on("ready", function() {
   state = {pins: board.pins, type: board.type, port: board.port, sensors: {}};
 
-  app.get("/sensors/proximity", (req, res) => {
-    res.send(state.sensors.proximity);
+  app.get("/sensors/:name", (req, res) => {
+    const {name} = req.params;
+    let sensorData = state.sensors[name];
+    if(typeof sensorData === 'undefined'){
+      res.status(404).send('Sensor not found!');
+    }
+    res.send(sensorData);
   });
 
   app.get("/board", (req, res) => {
@@ -29,16 +34,24 @@ board.on("ready", function() {
     res.send({pins, type, port});
   });
 
-  const proximity = new five.Proximity({
-    controller: "HCSR04",
-    pin: 7
-  });
-
-  proximity.on("data", function(data) {
-    const {inches, centimeters} = data;
-    state.sensors["proximity"] = {inches, centimeters};
-  });
+  app.post('/add/proximity', (req, res) => {
+    const {name, pin} = req.body;
+    addProximity(name, pin);
+    res.send(`Proximity Sensor ${name} Added on Pin ${pin}`);
+  })
 
 
   app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
 });
+
+const addProximity = (name, pin) => {
+  const proximity = new five.Proximity({
+    controller: "HCSR04",
+    pin
+  });
+
+  proximity.on("data", function(data) {
+    const {inches, centimeters} = data;
+    state.sensors[name] = {inches, centimeters};
+  });
+}
