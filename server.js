@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const app = express();
 
 const PORT = process.env.PORT || 3001;
-const board = new five.Board();
+const board = new five.Board({repl: false});
 let state = {};
 
 app.use(cors());
@@ -35,23 +35,72 @@ board.on("ready", function() {
   });
 
   app.post('/add/proximity', (req, res) => {
-    const {name, pin} = req.body;
-    addProximity(name, pin);
-    res.send(`Proximity Sensor ${name} Added on Pin ${pin}`);
+    const {name, pin, controller} = req.body;
+    addProximity(name, controller, pin);
+    res.send(`Proximity Sensor '${name}' Added on Pin: ${pin}`);
   })
+
+  app.post('/add/i2c', (req, res) => {
+    const {controller, type} = req.body;
+    addI2c(controller, type, res);
+  });
 
 
   app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
 });
 
-const addProximity = (name, pin) => {
+const addProximity = (name, controller, pin) => {
   const proximity = new five.Proximity({
-    controller: "HCSR04",
+    controller,
     pin
   });
-
+  state.sensors[name] = {status: 'inactive', type: 'Proximity'};
   proximity.on("data", function(data) {
     const {inches, centimeters} = data;
-    state.sensors[name] = {inches, centimeters};
+    state.sensors[name] = {status: 'inactive', type: 'Proximity', inches, centimeters};
   });
+}
+
+const addI2c = (controller, type, res) => {
+  switch(type){
+    case 'Altimeter':
+      addAltemeter(controller, res);
+      break;
+    case 'Barometer':
+      addBarometer(controller, res);
+      break;
+    default:
+      res.status(404).send('i2c type not found!');
+  }
+}
+
+const addAltemeter = (controller, res) => {
+  var barometer = new five.Altimeter({
+    controller
+  });
+
+  state.sensors.i2c = {status: 'inactive', type: 'Altimeter'};
+
+  barometer.on("data", function() {
+    const {feet, meters} = data;
+    state.sensors.i2c = {status: "active", type: 'Altimeter', feet, meters};
+  });
+
+  res.send(`Altemeter '${name}' was added successfully!`);
+}
+
+const addBarometer = (controller, res) => {
+  var barometer = new five.Altimeter({
+    controller
+  });
+
+  state.sensors.i2c = {status: 'inactive', type: 'Barometer'};
+
+  barometer.on("data", function() {
+    const {pressure} = data;
+    state.sensors.i2c = {status: "active", type: 'Barometer', pressure};
+    console.log(state);
+  });
+
+  res.send(`Barometer was added successfully!`);
 }
