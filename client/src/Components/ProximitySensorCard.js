@@ -21,6 +21,7 @@ const ProximitySensorCard = ({ initalSensor }) => {
       clearInterval(intervalState);
       setIntervalState(null);
     }
+    return () => clearInterval(intervalState);
   }, [monitoring]);
 
   const fetchSensorData = async () => {
@@ -28,16 +29,19 @@ const ProximitySensorCard = ({ initalSensor }) => {
       let res = await API.getSensor(sensor.name);
       setSensor(prev => ({...prev, ...res.data}));
     } catch(e){
+      setMonitoring(false);
       console.log(e.message);
     }
   }
 
   return (
-    <Card padding="20px" width="30%" height="100%" margin="10px 10px 0px 0px" onClick={() => setMonitoring(prev => !prev)} hover cursor="pointer">
+    <Card padding="20px"  lg="30%" md="35%" height="90%" margin="10px 10px 0px 0px" onClick={() => setMonitoring(prev => !prev)} hover cursor="pointer">
       <Container justify="space-around" align="unset" direction="column" >
         <Text>Name: <Code>{sensor.name}</Code></Text>
         <Text>Status: <Code>{sensor.status}</Code></Text>
         <Text>Type: <Code>{sensor.type}</Code></Text>
+        <Text>Pin: <Code>{sensor.pin}</Code></Text>
+        <Text>Endpoint: <Code>{sensor.endpoint}</Code></Text>
         {sensor.type === 'Proximity' && sensor.status === 'active' && (
           <>
             <Text>Last Data Received</Text>

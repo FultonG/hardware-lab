@@ -6,6 +6,7 @@ import AnimatedIcon from './Components/AnimatedIcon';
 import HomeIcon from './icons/home.svg';
 import AnalyticsIcon from './icons/analytics.svg';
 import Dashboard from './Pages/Dashboard';
+import Monitor from './Pages/Monitor';
 
 const App = () => {
   return (
@@ -16,6 +17,9 @@ const App = () => {
           <Switch>
             <Route exact path="/">
               <Dashboard />
+            </Route>
+            <Route exact path="/monitor">
+              <Monitor/>
             </Route>
           </Switch>
         </Container>

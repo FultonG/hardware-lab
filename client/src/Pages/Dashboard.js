@@ -46,7 +46,6 @@ const Dashboard = () => {
   const fetchSensors = async () => {
     try {
       let res = await API.getSensors();
-      console.log(res.data);
       setSensors(res.data);
     } catch (e) {
       console.log(e.message);
@@ -68,6 +67,16 @@ const Dashboard = () => {
     setNewSensor(prev => ({ ...prev, data: { ...prev.data, name } }));
   }
 
+  const handleChangeSensorType = (e) => {
+    let type = e.currentTarget.value;
+    if(type === 'i2c'){
+      setNewSensor({ ...initialSensor, type, i2cType: 'Altimeter' })
+    } else {
+      setNewSensor({ ...initialSensor, type  })
+    }
+    
+  }
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -75,6 +84,14 @@ const Dashboard = () => {
         let { data } = newSensor;
 
         let res = await API.addNewProximitySensor({ pin: data.pin, name: data.name, controller: data.value });
+        if (res.status === 200) {
+          setSensorSuccess(true);
+        }
+      }
+      else {
+        console.log(newSensor);
+        let controller = newSensor.i2cController || 'BMP180';
+        let res = await API.addI2c({type: newSensor.i2cType, controller})
         if (res.status === 200) {
           setSensorSuccess(true);
         }
@@ -94,9 +111,9 @@ const Dashboard = () => {
 
   return (
     <>
-      <Container direction="column" padding="30px">
+      <Container direction="column" padding="30px" overflow>
         <Title>Hardware Lab</Title>
-        <Container wrap="wrap" overflow>
+        <Container wrap="wrap" >
           <Text>Board</Text>
           <Container height="50%" margin="10px 0px 20px 0px">
             <Card padding="20px" width="40%">
@@ -111,7 +128,7 @@ const Dashboard = () => {
             </Card>
           </Container>
           {sensors.length > 0 && <Text>Sensors</Text>}
-          <Container height="40%">
+          <Container height="60%">
             {sensors.map(sensor => (
               <ProximitySensorCard initalSensor={sensor} />
             ))}
@@ -124,7 +141,7 @@ const Dashboard = () => {
           {!sensorSuccess ? (
             <Container as="form" direction="column" justify="space-evenly" height="100%" onSubmit={handleFormSubmit}>
               <Title>New Sensor</Title>
-              <Input as="select" className="selector" value={newSensor.type} onChange={(e) => setNewSensor({ ...initialSensor, type: e.currentTarget.value })}>
+              <Input as="select" className="selector" value={newSensor.type} onChange={handleChangeSensorType}>
                 <option value="Proximity">Proximity</option>
                 <option value="i2c">i2c</option>
               </Input>
@@ -141,11 +158,26 @@ const Dashboard = () => {
                 </>)}
               {newSensor.type === 'i2c' && (
                 <>
-                  <Input as="select" className="selector" >
+                  <Input as="select" className="selector" value={newSensor.i2cType} onChange={(e) => setNewSensor(prev=> ({...prev, i2cType: e.currentTarget.value, i2cController: 'BMP180'}))}>
                     {i2cList.map((option, index) => (
                       <option value={option.value} key={index}>{option.text}</option>
                     ))}
                   </Input>
+                 
+                  {newSensor.i2cType === 'Barometer' && (
+                     <Input as="select" className="selector" value={newSensor.i2cController} onChange={(e) => setNewSensor(prev => ({...prev, i2cController: e.currentTarget.value}))}>
+                     {BarometerList.map((option, index) => (
+                       <option value={option.value} key={index}>{option.text}</option>
+                     ))}
+                   </Input>
+                  )}
+                  {newSensor.i2cType === 'Altimeter' && (
+                     <Input as="select" className="selector" value={newSensor.i2cController} onChange={(e) => setNewSensor(prev => ({...prev, i2cController: e.currentTarget.value}))}>
+                     {AltimeterList.map((option, index) => (
+                       <option value={option.value} key={index}>{option.text}</option>
+                     ))}
+                   </Input>
+                  )}
                   {sensorPinMessage.i2c}
                 </>
               )}
@@ -224,6 +256,40 @@ const i2cList = [
   {
     text: 'Barometer',
     value: 'Barometer'
+  }
+]
+
+const AltimeterList = [
+  {
+    text: 'BMP180',
+    value: 'BMP180'
+  },
+  {
+    text: 'MPL3115A2',
+    value: 'MPL3115A2'
+  },
+  {
+    text: 'MS5611',
+    value: 'MS5611'
+  }
+];
+
+const BarometerList = [
+  {
+    text: 'MPL115A2',
+    value: 'MPL115A2'
+  },
+  {
+    text: 'BMP180',
+    value: 'BMP180'
+  },
+  {
+    text: 'MPL3115A2',
+    value: 'MPL3115A2'
+  },
+  {
+    text: 'MS5611',
+    value: 'MS5611'
   }
 ]
 
