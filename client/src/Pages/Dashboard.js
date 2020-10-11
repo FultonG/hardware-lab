@@ -9,7 +9,7 @@ import Button from '../Components/Button';
 import Modal from '../Components/Modal';
 import Check from '../gifs/check.gif'
 import Input from '../Components/Input';
-
+import ProximitySensorCard from '../Components/ProximitySensorCard';
 const Code = styled.code`
   background: #cfcfcf;
 `;
@@ -25,11 +25,13 @@ const initialSensor = {
 
 const Dashboard = () => {
   const [board, setBoard] = useState(null);
-  const [sensors, setSensors] = useState(null);
+  const [sensors, setSensors] = useState([]);
   const [addSensor, setAddSensor] = useState(false);
   const [newSensor, setNewSensor] = useState(initialSensor);
+  const [sensorSuccess, setSensorSuccess] = useState(false);
   useEffect(() => {
     fetchBoardData()
+    fetchSensors();
   }, []);
 
   const fetchBoardData = async () => {
@@ -56,56 +58,110 @@ const Dashboard = () => {
     setNewSensor(prev => ({ ...prev, data: proximityList[index] }))
   }
 
+  const handlePinChange = (e) => {
+    let pin = e.currentTarget.value;
+    setNewSensor(prev => ({ ...prev, data: { ...prev.data, pin } }));
+  }
+
+  const handleNameChange = (e) => {
+    let name = e.currentTarget.value;
+    setNewSensor(prev => ({ ...prev, data: { ...prev.data, name } }));
+  }
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (newSensor.type === 'Proximity') {
+        let { data } = newSensor;
+
+        let res = await API.addNewProximitySensor({ pin: data.pin, name: data.name, controller: data.value });
+        if (res.status === 200) {
+          setSensorSuccess(true);
+        }
+      }
+    } catch (e) {
+      console.log(e.message);
+    }
+
+  }
+
+  const handleCloseSuccessModal = () => {
+    setAddSensor(false);
+    setSensorSuccess(false);
+    setNewSensor(initialSensor);
+    fetchSensors();
+  }
+
   return (
     <>
       <Container direction="column" padding="30px">
         <Title>Hardware Lab</Title>
-        <Container wrap="wrap">
-          <Card padding="20px" width="50" height="50%">
-            {board ? (
-              <Container justify="space-around" align="unset" direction="column" >
-                <Text>Board Type <Code>{board.type}</Code></Text>
-                <Text>Port <Code>{board.port}</Code></Text>
-                <Button onClick={() => setAddSensor(true)}>New Sensor</Button>
-              </Container>
-            ) : <img src={Loading} />}
-          </Card>
+        <Container wrap="wrap" overflow>
+          <Text>Board</Text>
+          <Container height="50%" margin="10px 0px 20px 0px">
+            <Card padding="20px" width="40%">
+              {board ? (
+                <Container justify="space-around" align="unset" direction="column" >
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/ArduinoUno.svg/285px-ArduinoUno.svg.png" style={{height: '50%', width:'40%', alignSelf: 'center'}}/>
+                  <Text>Board Type: <Code>{board.type}</Code></Text>
+                  <Text>Port: <Code>{board.port}</Code></Text>
+                  <Button onClick={() => setAddSensor(true)}>New Sensor</Button>
+                </Container>
+              ) : <img src={Loading} />}
+            </Card>
+          </Container>
+          {sensors.length > 0 && <Text>Sensors</Text>}
+          <Container height="40%">
+            {sensors.map(sensor => (
+              <ProximitySensorCard initalSensor={sensor} />
+            ))}
+          </Container>
+
         </Container>
       </Container>
       <Modal show={addSensor}>
         <Card minHeight="60%" width="50%" padding="20px">
-          <Container as="form" direction="column" justify="space-evenly" height="100%">
-            <Title>New Sensor</Title>
-            <Input as="select" className="selector" value={newSensor.type} onChange={(e) => setNewSensor({ ...initialSensor, type: e.currentTarget.value })}>
-              <option value="Proximity">Proximity</option>
-              <option value="i2c">i2c</option>
-            </Input>
-            {newSensor.type === 'Proximity' && (
-              <>
-                <Input as="select" className="selector" onChange={handleProximityControllerChange}>
-                  {proximityList.map((option, index) => (
-                    <option value={index} key={index}>{option.text}</option>
-                  ))}
-                </Input>
-                <Input placeholder="Name"></Input>
-                {sensorPinMessage[newSensor.data.type]}
-                {newSensor.data.type !== "i2c" && <Input placeholder="Pin"></Input>}
-              </>)}
+          {!sensorSuccess ? (
+            <Container as="form" direction="column" justify="space-evenly" height="100%" onSubmit={handleFormSubmit}>
+              <Title>New Sensor</Title>
+              <Input as="select" className="selector" value={newSensor.type} onChange={(e) => setNewSensor({ ...initialSensor, type: e.currentTarget.value })}>
+                <option value="Proximity">Proximity</option>
+                <option value="i2c">i2c</option>
+              </Input>
+              {newSensor.type === 'Proximity' && (
+                <>
+                  <Input as="select" className="selector" onChange={handleProximityControllerChange}>
+                    {proximityList.map((option, index) => (
+                      <option value={index} key={index}>{option.text}</option>
+                    ))}
+                  </Input>
+                  <Input placeholder="Name" value={newSensor.data.name} onChange={handleNameChange}></Input>
+                  {sensorPinMessage[newSensor.data.type]}
+                  {newSensor.data.type !== "i2c" && <Input placeholder="Pin" value={newSensor.data.pin} onChange={handlePinChange}></Input>}
+                </>)}
               {newSensor.type === 'i2c' && (
                 <>
-                <Input as="select" className="selector" >
-                  {i2cList.map((option, index) => (
-                    <option value={option.value} key={index}>{option.text}</option>
-                  ))}
-                </Input>
-                {sensorPinMessage.i2c}
+                  <Input as="select" className="selector" >
+                    {i2cList.map((option, index) => (
+                      <option value={option.value} key={index}>{option.text}</option>
+                    ))}
+                  </Input>
+                  {sensorPinMessage.i2c}
                 </>
               )}
-            <Container height="auto" margin="10px 0px 0px 0px">
-              <Button margin="0px 10px 0px 0px">Add Sensor</Button>
-              <Button type="button" onClick={() => setAddSensor(false)}>Cancel</Button>
+              <Container height="auto" margin="10px 0px 0px 0px">
+                <Button margin="0px 10px 0px 0px">Add Sensor</Button>
+                <Button type="button" onClick={() => setAddSensor(false)}>Cancel</Button>
+              </Container>
             </Container>
-          </Container>
+          ) : (
+              <Container direction="column">
+                <Container justify="center"><img src={Check} /></Container>
+                <Container justify="center"><Text>{newSensor.type} Sensor Added Successfully</Text></Container>
+                <Container justify="center" margin="15px 0px 0px 0px"><Button onClick={handleCloseSuccessModal}>Ok</Button></Container>
+              </Container>
+            )}
+
         </Card>
       </Modal>
     </>

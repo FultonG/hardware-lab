@@ -21,7 +21,11 @@ board.on("ready", function () {
   state = { pins: board.pins, type: board.type, port: board.port, sensors: {} };
 
   app.get("/sensors", (req, res) => {
-    res.send(state.sensors);
+    let sensors = [];
+    for(const attr in state.sensors){
+      sensors.push({...state.sensors[attr], name: attr})
+    }
+    res.send(sensors);
   });
 
   app.get("/sensors/:name", (req, res) => {
@@ -69,7 +73,12 @@ const addProximity = (name, controller, pin) => {
   state.sensors[name] = { status: 'inactive', type: 'Proximity' };
   proximity.on("data", function (data) {
     const { inches, centimeters } = data;
-    state.sensors[name] = { status: 'active', type: 'Proximity', inches, centimeters };
+    if(inches !== 0 && centimeters !== 0){
+      state.sensors[name] = { status: 'active', type: 'Proximity', inches, centimeters };
+    } else {
+      state.sensors[name] = { status: 'inactive', type: 'Proximity' };
+    }
+    
   });
 }
 
