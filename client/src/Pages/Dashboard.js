@@ -53,7 +53,7 @@ const Dashboard = () => {
 
   const handleProximityControllerChange = (e) => {
     let index = e.currentTarget.value;
-    setNewSensor(prev => ({ ...prev, data: proximityList[index]}))
+    setNewSensor(prev => ({ ...prev, data: proximityList[index] }))
   }
 
   return (
@@ -74,7 +74,7 @@ const Dashboard = () => {
       </Container>
       <Modal show={addSensor}>
         <Card minHeight="60%" width="50%" padding="20px">
-          <Container as="form" direction="column" justify="space-evenly" >
+          <Container as="form" direction="column" justify="space-evenly" height="100%">
             <Title>New Sensor</Title>
             <Input as="select" className="selector" value={newSensor.type} onChange={(e) => setNewSensor({ ...initialSensor, type: e.currentTarget.value })}>
               <option value="Proximity">Proximity</option>
@@ -87,12 +87,22 @@ const Dashboard = () => {
                     <option value={index} key={index}>{option.text}</option>
                   ))}
                 </Input>
+                <Input placeholder="Name"></Input>
+                {sensorPinMessage[newSensor.data.type]}
+                {newSensor.data.type !== "i2c" && <Input placeholder="Pin"></Input>}
               </>)}
-            <Input placeholder="Name"></Input>
-            {sensorPinMessage[newSensor.data.type]}
-            {newSensor.data.type !== "i2c" && <Input placeholder="Pin"></Input>}
-            <Container height="auto" width="60%" justify="space-between" margin="10px">
-              <Button>Add Sensor</Button>
+              {newSensor.type === 'i2c' && (
+                <>
+                <Input as="select" className="selector" >
+                  {i2cList.map((option, index) => (
+                    <option value={option.value} key={index}>{option.text}</option>
+                  ))}
+                </Input>
+                {sensorPinMessage.i2c}
+                </>
+              )}
+            <Container height="auto" margin="10px 0px 0px 0px">
+              <Button margin="0px 10px 0px 0px">Add Sensor</Button>
               <Button type="button" onClick={() => setAddSensor(false)}>Cancel</Button>
             </Container>
           </Container>
@@ -150,6 +160,17 @@ const proximityList = [
   }
 ]
 
+const i2cList = [
+  {
+    text: 'Altimeter',
+    value: 'Altimeter'
+  },
+  {
+    text: 'Barometer',
+    value: 'Barometer'
+  }
+]
+
 const sensorPinMessage = {
   'Analog': (
     <Text>Sensor Type: <Code>Analog</Code>. Pin should be <Code>A0, A1, A2, or A3</Code></Text>
@@ -159,7 +180,7 @@ const sensorPinMessage = {
   )
   ,
   'i2c': (
-    <Text>Sensor Type: <Code>i2c</Code>. Make sure to use <Code>A4 and A5</Code></Text>
+    <Text>Sensor Type: <Code>i2c</Code>. Make sure to use Pins <Code>A4 and A5</Code></Text>
   )
 }
 

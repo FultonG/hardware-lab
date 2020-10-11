@@ -31,9 +31,9 @@ const NavItems = [
     icon: <AnimatedIcon file={HomeIcon} id="dashboard-link" duration={300} />
   },
   {
-    text: 'Analytics',
-    link: '/analytics',
-    icon: <AnimatedIcon file={AnalyticsIcon} id="analytics-link" duration={300} />
+    text: 'Monitor',
+    link: '/monitor',
+    icon: <AnimatedIcon file={AnalyticsIcon} id="monitor-link" duration={300} />
   }
 ]
 

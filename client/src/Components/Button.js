@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 
 const Button = styled.button`
+  ${({margin}) => margin && `margin: ${margin};`}
   color: white;
   background: #0085ff;
   border-radius: 10px;
