@@ -34,10 +34,10 @@ const StyledNavLink = styled(NavLink)`
   width: 100%;
   align-items: center;
   &.active {
-    border-right: 2px solid #8ED275;
+    border-right: 2px solid #0085ff;
   }
   &:hover {
-    background: #8ED275;
+    background: #0085ff;
     color: white;
   }
 `;
