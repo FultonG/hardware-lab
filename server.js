@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const app = express();
 
 const PORT = process.env.PORT || 3001;
-const board = new five.Board({repl: false});
+const board = new five.Board({ repl: false });
 let state = {};
 
 app.use(cors());
@@ -17,31 +17,35 @@ app.use(bodyParser.json());
 
 
 
-board.on("ready", function() {
-  state = {pins: board.pins, type: board.type, port: board.port, sensors: {}};
+board.on("ready", function () {
+  state = { pins: board.pins, type: board.type, port: board.port, sensors: {} };
+
+  app.get("/sensors", (req, res) => {
+    res.send(state.sensors);
+  });
 
   app.get("/sensors/:name", (req, res) => {
-    const {name} = req.params;
+    const { name } = req.params;
     let sensorData = state.sensors[name];
-    if(typeof sensorData === 'undefined'){
+    if (typeof sensorData === 'undefined') {
       res.status(404).send('Sensor not found!');
     }
     res.send(sensorData);
   });
 
   app.get("/board", (req, res) => {
-    const {pins, type, port} = state;
-    res.send({pins, type, port});
+    const { pins, type, port } = state;
+    res.send({ pins, type, port });
   });
 
   app.post('/add/proximity', (req, res) => {
-    const {name, pin, controller} = req.body;
+    const { name, pin, controller } = req.body;
     addProximity(name, controller, pin);
-    res.send(`Proximity Sensor '${name}' Added on Pin: ${pin}`);
+    res.send(`Proximity Sensor '${name}'`);
   })
 
   app.post('/add/i2c', (req, res) => {
-    const {controller, type} = req.body;
+    const { controller, type } = req.body;
     addI2c(controller, type, res);
   });
 
@@ -50,19 +54,27 @@ board.on("ready", function() {
 });
 
 const addProximity = (name, controller, pin) => {
-  const proximity = new five.Proximity({
-    controller,
-    pin
-  });
-  state.sensors[name] = {status: 'inactive', type: 'Proximity'};
-  proximity.on("data", function(data) {
-    const {inches, centimeters} = data;
-    state.sensors[name] = {status: 'inactive', type: 'Proximity', inches, centimeters};
+  let proximity;
+  if (typeof pin === 'undefined') {
+    proximity = new five.Proximity({
+      controller
+    });
+  } else {
+    proximity = new five.Proximity({
+      controller,
+      pin
+    });
+  }
+
+  state.sensors[name] = { status: 'inactive', type: 'Proximity' };
+  proximity.on("data", function (data) {
+    const { inches, centimeters } = data;
+    state.sensors[name] = { status: 'active', type: 'Proximity', inches, centimeters };
   });
 }
 
 const addI2c = (controller, type, res) => {
-  switch(type){
+  switch (type) {
     case 'Altimeter':
       addAltemeter(controller, res);
       break;
@@ -79,11 +91,11 @@ const addAltemeter = (controller, res) => {
     controller
   });
 
-  state.sensors.i2c = {status: 'inactive', type: 'Altimeter'};
+  state.sensors.i2c = { status: 'inactive', type: 'Altimeter' };
 
-  barometer.on("data", function() {
-    const {feet, meters} = data;
-    state.sensors.i2c = {status: "active", type: 'Altimeter', feet, meters};
+  barometer.on("data", function () {
+    const { feet, meters } = data;
+    state.sensors.i2c = { status: "active", type: 'Altimeter', feet, meters };
   });
 
   res.send(`Altemeter '${name}' was added successfully!`);
@@ -94,11 +106,11 @@ const addBarometer = (controller, res) => {
     controller
   });
 
-  state.sensors.i2c = {status: 'inactive', type: 'Barometer'};
+  state.sensors.i2c = { status: 'inactive', type: 'Barometer' };
 
-  barometer.on("data", function() {
-    const {pressure} = data;
-    state.sensors.i2c = {status: "active", type: 'Barometer', pressure};
+  barometer.on("data", function () {
+    const { pressure } = data;
+    state.sensors.i2c = { status: "active", type: 'Barometer', pressure };
     console.log(state);
   });
 
